@@ -542,6 +542,9 @@
         <h5 style="font-weight:800">Panel de Administración</h5>
         <p style="color:var(--muted);font-size:.875rem">WebCraft Studio</p>
       </div>
+      <label class="form-label">URL de tu sitio web</label>
+      <input type="url" class="form-control mb-3" id="admin-site-url" placeholder="https://tuusuario.github.io/repo">
+      <p style="font-size:.72rem;color:var(--faint);margin-top:-10px;margin-bottom:14px"><i class="fa-solid fa-circle-info me-1"></i>Se usa para generar los links en los WhatsApp al cliente.</p>
       <label class="form-label">Contraseña</label>
       <input type="password" class="form-control mb-3" id="admin-pass" placeholder="Contraseña del panel" onkeydown="if(event.key==='Enter')adminLogin()">
       <div id="admin-login-err" class="d-none mb-3" style="color:var(--red);font-size:.875rem;text-align:center"></div>
@@ -849,9 +852,9 @@ async function previewRef(input) {
   if (!input.files[0]) return;
   const file = input.files[0];
   _refImgMime = file.type;
-  _refImgB64  = await compressImg(file, 600, 0.65);
+  _refImgB64  = await compressImg(file, 350, 0.55);  // pequeño para que quepa en URL
   const el = document.getElementById('ref-img-el');
-  el.src = 'data:' + file.type + ';base64,' + _refImgB64;
+  el.src = 'data:image/jpeg;base64,' + _refImgB64;
   document.getElementById('ref-preview').classList.remove('d-none');
   document.getElementById('ref-zone').classList.add('d-none');
 }
@@ -1103,10 +1106,10 @@ async function clientRespond(acepta) {
 let _compB64 = ''; let _compMime = '';
 async function previewComp(input) {
   if (!input.files[0]) return;
-  const file = input.files[0]; _compMime = file.type;
-  _compB64 = await compressImg(file, 800, 0.7);
+  const file = input.files[0]; _compMime = 'image/jpeg';
+  _compB64 = await compressImg(file, 500, 0.6);  // legible pero no pesado
   const img = document.getElementById('comp-prev-img');
-  img.src = 'data:' + file.type + ';base64,' + _compB64;
+  img.src = 'data:image/jpeg;base64,' + _compB64;
   document.getElementById('comp-preview-wrap').classList.remove('d-none');
 }
 function clearComp() {
@@ -1151,14 +1154,24 @@ async function submitProof() {
 let _adminPass = '';
 let _allData   = [];
 let _modalData = null;
+let _siteUrl   = localStorage.getItem('wc_site_url') || '';
 
 function adminLogin() {
-  const pass = document.getElementById('admin-pass').value;
+  const pass    = document.getElementById('admin-pass').value;
+  const siteRaw = (document.getElementById('admin-site-url')?.value || '').trim();
   if (!pass) return;
   _adminPass = pass;
+  if (siteRaw) { _siteUrl = siteRaw.replace(/\/$/, ''); localStorage.setItem('wc_site_url', _siteUrl); }
   sessionStorage.setItem('admin_pass', pass);
   loadAdmin();
 }
+
+// Pre-fill site URL field if already saved
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('wc_site_url');
+  const el    = document.getElementById('admin-site-url');
+  if (saved && el) el.value = saved;
+}, { once: false });
 
 function adminLogout() {
   _adminPass = ''; sessionStorage.removeItem('admin_pass');
@@ -1308,7 +1321,7 @@ async function adminSendConfirm() {
   if (!confirm('¿Enviar confirmación de recibido al cliente por WhatsApp?')) return;
   showLoad('Enviando confirmación...');
   try {
-    const res = await callAPI({ action: 'sendConfirm', id: _modalData.id, pass: _adminPass });
+    const res = await callAPI({ action: 'sendConfirm', id: _modalData.id, pass: _adminPass, siteUrl: _siteUrl });
     hideLoad();
     if (res.success) {
       toast('✅ Confirmación enviada por WhatsApp', 'success');
@@ -1321,11 +1334,14 @@ async function adminSendConfirm() {
 let _qrB64 = ''; let _qrMime = '';
 async function previewQR(input) {
   if (!input.files[0]) return;
-  const file = input.files[0]; _qrMime = file.type;
-  _qrB64 = await compressImg(file, 500, 0.8);
+  const result = await compressQR(input.files[0]);
+  _qrB64 = result.b64; _qrMime = result.mime;
   const img = document.getElementById('qr-preview-img');
-  img.src = 'data:' + file.type + ';base64,' + _qrB64;
+  img.src = 'data:' + result.mime + ';base64,' + result.b64;
   document.getElementById('qr-preview-wrap').classList.remove('d-none');
+  // Mostrar tamaño aproximado para debug
+  const kb = Math.round(result.b64.length * 0.75 / 1024);
+  console.log('QR comprimido:', kb + ' KB (base64)');
 }
 function clearQR() {
   _qrB64 = ''; _qrMime = '';
@@ -1348,9 +1364,10 @@ async function adminSendOffer() {
   }
   if (!confirm('¿Enviar esta propuesta al cliente por WhatsApp?')) return;
 
-  showLoad('Enviando propuesta...');
-  const params = { action: 'sendOffer', id: _modalData.id, pass: _adminPass, monto, tiempo, razon };
+  showLoad('Subiendo QR...');
+  const params = { action: 'sendOffer', id: _modalData.id, pass: _adminPass, monto, tiempo, razon, siteUrl: _siteUrl };
   if (_qrB64) { params.qrB64 = _qrB64; params.qrMime = _qrMime; }
+  showLoad('Enviando propuesta...');
   try {
     const res = await callAPI(params);
     hideLoad();
@@ -1367,7 +1384,7 @@ async function adminConfirmPay() {
   if (!confirm('¿Confirmar el pago y notificar al cliente que su proyecto inicia?')) return;
   showLoad('Confirmando pago...');
   try {
-    const res = await callAPI({ action: 'confirmPay', id: _modalData.id, pass: _adminPass });
+    const res = await callAPI({ action: 'confirmPay', id: _modalData.id, pass: _adminPass, siteUrl: _siteUrl });
     hideLoad();
     if (res.success) {
       toast('✅ Pago confirmado. Cliente notificado.', 'success');
@@ -1382,7 +1399,7 @@ async function adminSetStatus(estado) {
   if (!confirm('¿Cambiar estado a "' + estado + '"?')) return;
   showLoad('Actualizando...');
   try {
-    const res = await callAPI({ action: 'setStatus', id: _modalData.id, pass: _adminPass, estado });
+    const res = await callAPI({ action: 'setStatus', id: _modalData.id, pass: _adminPass, estado, siteUrl: _siteUrl });
     hideLoad();
     if (res.success) {
       toast('Estado actualizado', 'success');
@@ -1408,6 +1425,30 @@ function compressImg(file, maxW, quality) {
       resolve(dataUrl.split(',')[1]);
     };
     img.onerror = () => resolve('');
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Compresión especial para QR: PNG a 220px máx.
+// Los QR son B&W → PNG comprime de ~60KB a ~3-8KB
+function compressQR(file) {
+  return new Promise(resolve => {
+    const canvas = document.createElement('canvas');
+    const img    = new Image();
+    img.onload = () => {
+      const maxSize = 220;
+      const ratio   = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/png');  // PNG = sin pérdida para B&W
+      resolve({ b64: dataUrl.split(',')[1], mime: 'image/png' });
+    };
+    img.onerror = () => resolve({ b64: '', mime: 'image/png' });
     img.src = URL.createObjectURL(file);
   });
 }
