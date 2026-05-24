@@ -937,6 +937,14 @@ async function loadStatusByToken(token) {
   }
 }
 
+const estadoLabels = {
+  pendiente:'⏳ Pendiente', confirmado:'📬 Confirmado',
+  oferta_enviada:'💼 Oferta enviada', aceptado:'✅ Aceptado',
+  rechazado_cliente:'❌ Rechazado', rechazado:'❌ Rechazado',
+  comprobante_enviado:'💳 Comprobante enviado',
+  en_desarrollo:'🚀 En desarrollo', completado:'🎉 Completado'
+};
+
 const STEPS = [
   { key: 'pendiente',          label: 'Recibido' },
   { key: 'confirmado',         label: 'Revisado' },
@@ -951,7 +959,9 @@ const STEP_ORDER = STEPS.map(s => s.key);
 function renderStatus(d) {
   document.getElementById('st-nombre').textContent = d.nombre;
   document.getElementById('st-tipo').textContent   = d.tipo;
-  document.getElementById('st-badge').outerHTML = badgeHTML(d.estado).replace('span', 'span id="st-badge"');
+  const stBadge = document.getElementById('st-badge');
+  stBadge.className   = 'badge-estado s-' + d.estado;
+  stBadge.textContent = estadoLabels[d.estado] || d.estado;
   document.getElementById('st-fecha').textContent  = 'Solicitud enviada: ' + (d.timestamp || '—');
 
   // Steps
@@ -1221,11 +1231,15 @@ function renderAdminTable(data) {
 
 function openModal(id) {
   const d = _allData.find(r => String(r.id) === String(id));
-  if (!d) return;
+  if (!d) { toast('No se encontró la solicitud', 'error'); return; }
   _modalData = d;
 
   document.getElementById('modal-title-name').textContent = d.nombre;
-  document.getElementById('modal-badge').outerHTML = badgeHTML(d.estado).replace('span', 'span id="modal-badge"');
+
+  // Badge — actualizar directamente sin tocar outerHTML
+  const badge = document.getElementById('modal-badge');
+  badge.className = 'badge-estado s-' + d.estado;
+  badge.textContent = estadoLabels[d.estado] || d.estado;
 
   // Info tab
   document.getElementById('mi-nombre').textContent  = d.nombre;
@@ -1234,7 +1248,7 @@ function openModal(id) {
   document.getElementById('mi-tipo').textContent    = d.tipo;
   document.getElementById('mi-dominio').textContent = d.dominio || '—';
   document.getElementById('mi-ts').textContent      = d.timestamp || '—';
-  document.getElementById('mi-desc').textContent    = d.desc;
+  document.getElementById('mi-desc').textContent    = d.desc || d.descripcion || '';
 
   const refUrlWrap = document.getElementById('mi-ref-url-wrap');
   const refImgWrap = document.getElementById('mi-ref-img-wrap');
@@ -1248,23 +1262,27 @@ function openModal(id) {
     document.getElementById('mi-ref-img').src = d.imgRefUrl;
   } else refImgWrap.classList.add('d-none');
 
-  // Oferta tab: pre-fill if exists
+  // Oferta tab
   document.getElementById('m-monto').value  = d.monto  || '';
   document.getElementById('m-tiempo').value = d.tiempo || '';
   document.getElementById('m-razon').value  = d.razon  || '';
+  _qrB64 = ''; _qrMime = '';
+  document.getElementById('qr-preview-wrap').classList.add('d-none');
+  document.getElementById('m-qr-inp').value = '';
   const qrExist = document.getElementById('qr-existing');
   if (d.qrUrl) {
     qrExist.classList.remove('d-none');
     document.getElementById('qr-existing-img').src = d.qrUrl;
-  } else qrExist.classList.add('d-none');
-  document.getElementById('qr-preview-wrap').classList.add('d-none');
+  } else {
+    qrExist.classList.add('d-none');
+  }
 
   // Pago tab
   if (d.comprobanteUrl) {
     document.getElementById('pago-sin-comprobante').classList.add('d-none');
     document.getElementById('pago-con-comprobante').classList.remove('d-none');
-    document.getElementById('comp-img').src = d.comprobanteUrl;
-    document.getElementById('comp-link').href = d.comprobanteUrl;
+    document.getElementById('comp-img').src       = d.comprobanteUrl;
+    document.getElementById('comp-link').href     = d.comprobanteUrl;
   } else {
     document.getElementById('pago-sin-comprobante').classList.remove('d-none');
     document.getElementById('pago-con-comprobante').classList.add('d-none');
@@ -1272,11 +1290,13 @@ function openModal(id) {
 
   // Estado tab
   const estadoEl = document.getElementById('modal-estado-actual');
-  estadoEl.className = 'badge-estado s-' + d.estado + ' ms-1';
+  estadoEl.className   = 'badge-estado s-' + d.estado + ' ms-1';
   estadoEl.textContent = d.estado;
 
   switchModalTab('info', document.querySelector('#admin-modal .nav-link'));
-  new bootstrap.Modal(document.getElementById('admin-modal')).show();
+
+  // getOrCreateInstance evita crear instancias duplicadas de Bootstrap
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('admin-modal')).show();
 }
 
 function switchModalTab(tab, el) {
