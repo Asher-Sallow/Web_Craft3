@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebCraft Studio – Desarrollo Web Profesional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ═══ VARIABLES ═══ */
+    :root {
+      --bg:      #070d1a; --bg2: #0d1526; --bg3: #111e35;
+      --card:    rgba(17,30,53,.85);
+      --border:  rgba(99,102,241,.18); --border2: rgba(99,102,241,.35);
+      --primary: #6366f1; --primary2: #4f46e5;
+      --cyan:    #22d3ee; --green: #10b981; --red: #ef4444;
+      --amber:   #f59e0b; --purple: #a78bfa;
+      --text:    #e2e8f0; --muted: #94a3b8; --faint: #475569;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .4;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+    /* ═══ SHARED ═══ */
+    .glass { background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(12px); border-radius: 16px; }
+    .mono  { font-family: 'Space Mono', monospace; }
+    .gradient-text { background: linear-gradient(135deg, var(--primary), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .view { display: none; min-height: 100vh; }
+    .view.active { display: block; }
+
+    /* ═══ FORM CONTROLS ═══ */
+    .form-control, .form-select {
+      background: rgba(7,13,26,.7); border: 1px solid var(--border2);
+      color: var(--text); border-radius: 10px; padding: 11px 15px;
+      font-family: 'Plus Jakarta Sans', sans-serif; transition: border-color .2s, box-shadow .2s;
+    }
+    .form-control:focus, .form-select:focus {
+      background: rgba(7,13,26,.9); border-color: var(--primary);
+      color: var(--text); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .form-control::placeholder { color: var(--faint); }
+    .form-label { color: #cbd5e1; font-size: .875rem; font-weight: 500; margin-bottom: 6px; display: block; }
+    .form-select option { background: var(--bg2); color: var(--text); }
+    textarea.form-control { resize: vertical; min-height: 110px; }
+
+    /* ═══ BUTTONS ═══ */
+    .btn-glow {
+      background: linear-gradient(135deg, var(--primary), var(--primary2));
+      border: none; color: #fff; font-weight: 600; border-radius: 50px;
+      padding: 13px 36px; font-size: .95rem; transition: all .3s ease;
+      box-shadow: 0 4px 24px rgba(99,102,241,.35); letter-spacing: .01em;
+    }
+    .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,.55); color: #fff; }
+    .btn-glow:active { transform: translateY(0); }
+    .btn-ghost {
+      background: rgba(99,102,241,.08); border: 1px solid var(--border2);
+      color: var(--purple); border-radius: 50px; padding: 8px 22px;
+      font-size: .85rem; font-weight: 500; transition: all .2s;
+    }
+    .btn-ghost:hover { background: rgba(99,102,241,.18); color: var(--purple); }
+    .btn-outline-red { background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 50px; padding: 10px 26px; font-weight: 600; transition: all .2s; }
+    .btn-outline-red:hover { background: rgba(239,68,68,.1); color: var(--red); }
+    .btn-outline-green { background: transparent; border: 1px solid var(--green); color: var(--green); border-radius: 50px; padding: 10px 26px; font-weight: 600; transition: all .2s; }
+    .btn-outline-green:hover { background: rgba(16,185,129,.1); color: var(--green); }
+
+    /* ═══ NAVBAR ═══ */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7,13,26,.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); padding: 14px 0;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    }
+    .nav-logo-text { font-weight: 800; font-size: 1.1rem; color: #fff; }
+    .nav-logo-text span { color: var(--cyan); }
+
+    /* ═══ UPLOAD ZONE ═══ */
+    .upload-zone {
+      border: 2px dashed var(--border2); border-radius: 12px;
+      padding: 28px 20px; text-align: center; cursor: pointer; transition: all .25s;
+    }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--primary); background: rgba(99,102,241,.06); }
+    .upload-zone i { color: var(--primary); }
+
+    /* ═══ STATUS BADGES ═══ */
+    .badge-estado { border-radius: 20px; padding: 3px 10px; font-size: .72rem; font-weight: 600; border: 1px solid; white-space: nowrap; }
+    .s-pendiente         { color: var(--amber);  border-color: var(--amber);  background: rgba(245,158,11,.1); }
+    .s-confirmado        { color: var(--cyan);   border-color: var(--cyan);   background: rgba(34,211,238,.1); }
+    .s-oferta_enviada    { color: var(--purple);  border-color: var(--purple);  background: rgba(167,139,250,.1); }
+    .s-aceptado          { color: var(--green);  border-color: var(--green);  background: rgba(16,185,129,.1); }
+    .s-rechazado_cliente,.s-rechazado { color: var(--red); border-color: var(--red); background: rgba(239,68,68,.1); }
+    .s-comprobante_enviado { color: #34d399; border-color: #34d399; background: rgba(52,211,153,.1); }
+    .s-en_desarrollo     { color: #818cf8; border-color: #818cf8; background: rgba(129,140,248,.12); }
+    .s-completado        { color: #6ee7b7; border-color: #6ee7b7; background: rgba(110,231,183,.1); }
+
+    /* ═══ ADMIN TABLE ═══ */
+    .admin-table { color: var(--text); }
+    .admin-table thead th {
+      background: rgba(99,102,241,.1); color: var(--purple);
+      border-color: var(--border); font-size: .72rem;
+      text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+    }
+    .admin-table tbody tr { border-color: var(--border); cursor: pointer; transition: background .15s; }
+    .admin-table tbody tr:hover { background: rgba(99,102,241,.07); }
+    .admin-table td { border-color: var(--border); vertical-align: middle; font-size: .875rem; }
+
+    /* ═══ STAT CARDS ═══ */
+    .stat-card { padding: 20px 24px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); }
+    .stat-num { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-lbl { font-size: .78rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ═══ LOADER OVERLAY ═══ */
+    #loader {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(7,13,26,.8); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    #loader.show { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(99,102,241,.2); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══ TOAST ═══ */
+    #toast-box { position: fixed; bottom: 24px; right: 24px; z-index: 9998; display: flex; flex-direction: column; gap: 10px; }
+    .toast-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 18px;
+      font-size: .875rem; color: var(--text);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      animation: slideIn .3s ease; max-width: 320px;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ═══ LANDING HERO ═══ */
+    .hero-section { min-height: 92vh; display: flex; align-items: center; position: relative; overflow: hidden; }
+    .hero-blob {
+      position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none;
+    }
+    .hero-blob-1 { width: 500px; height: 500px; background: rgba(99,102,241,.12); top: -100px; right: -100px; }
+    .hero-blob-2 { width: 350px; height: 350px; background: rgba(34,211,238,.07); bottom: 0; left: -80px; }
+    .hero-eyebrow { font-size: .8rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); background: rgba(34,211,238,.1); border: 1px solid rgba(34,211,238,.2); border-radius: 20px; display: inline-block; padding: 5px 14px; margin-bottom: 20px; }
+    .hero-title { font-size: clamp(2.4rem,5vw,4rem); font-weight: 800; line-height: 1.1; margin-bottom: 22px; }
+    .hero-sub { font-size: 1.1rem; color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 36px; }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .feature-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; transition: transform .25s, border-color .25s; }
+    .feature-card:hover { transform: translateY(-4px); border-color: var(--border2); }
+    .feature-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 1.3rem; }
+
+    /* ═══ PROGRESS STEPS ═══ */
+    .step-bar { display: flex; align-items: flex-start; gap: 0; margin-bottom: 32px; overflow-x: auto; padding-bottom: 4px; }
+    .step { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 60px; }
+    .step-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; z-index: 1; border: 2px solid transparent;
+    }
+    .step-dot.done  { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .step-dot.active{ background: rgba(99,102,241,.2); color: var(--primary); border-color: var(--primary); }
+    .step-dot.next  { background: rgba(255,255,255,.05); color: var(--faint); border-color: var(--border); }
+    .step-lbl { font-size: .65rem; text-align: center; margin-top: 6px; color: var(--muted); max-width: 70px; }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin-top: 15px; }
+    .step-line.done { background: var(--primary); }
+
+    /* ═══ QR IMAGE ═══ */
+    .qr-img { max-width: 220px; border-radius: 12px; border: 2px solid var(--border2); }
+
+    /* ═══ MODAL OVERRIDE ═══ */
+    .modal-content { background: var(--bg2); border: 1px solid var(--border); color: var(--text); }
+    .modal-header { border-bottom: 1px solid var(--border); }
+    .modal-footer { border-top: 1px solid var(--border); }
+    .modal-header .btn-close { filter: invert(1) opacity(.5); }
+    .nav-tabs .nav-link { color: var(--muted); border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 18px; }
+    .nav-tabs .nav-link.active { color: var(--primary); border-bottom-color: var(--primary); background: none; }
+    .nav-tabs { border-bottom: 1px solid var(--border); }
+
+    /* ═══ FOOTER ═══ */
+    footer { padding: 32px 0; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOADER
+══════════════════════════════════════════════════════════ -->
+<div id="loader">
+  <div class="spinner"></div>
+  <span id="loader-msg" style="color:var(--muted);font-size:.875rem">Cargando...</span>
+</div>
+
+<!-- TOAST BOX -->
+<div id="toast-box"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: LANDING
+══════════════════════════════════════════════════════════ -->
+<div id="v-landing" class="view active">
+  <nav class="top-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="#" class="nav-logo" onclick="secretClick(this)">
+        <div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div>
+        <span class="nav-logo-text">Web<span>Craft</span></span>
+      </a>
+      <button class="btn-glow" onclick="showView('v-form')" style="padding:9px 22px;font-size:.85rem">
+        <i class="fa-solid fa-rocket me-2"></i>Solicitar proyecto
+      </button>
+    </div>
+  </nav>
+
+  <section class="hero-section">
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+    <div class="container position-relative">
+      <div class="row align-items-center">
+        <div class="col-lg-7">
+          <span class="hero-eyebrow"><i class="fa-solid fa-bolt me-1"></i>Desarrollo web profesional</span>
+          <h1 class="hero-title">
+            ¿Necesitas tu<br>
+            <span class="gradient-text">página web?</span><br>
+            Nosotros la hacemos.
+          </h1>
+          <p class="hero-sub">Diseñamos y desarrollamos sitios web modernos, rápidos y a medida. Landing pages, e-commerce, portfolios y más.</p>
+          <div class="hero-cta">
+            <button class="btn-glow" onclick="showView('v-form')">
+              <i class="fa-solid fa-paper-plane me-2"></i>Solicitar ahora — gratis
+            </button>
+            <button class="btn-ghost" onclick="showView('v-status-lookup')">
+              <i class="fa-solid fa-magnifying-glass me-1"></i>Ver mi solicitud
+            </button>
+          </div>
+        </div>
+        <div class="col-lg-5 mt-5 mt-lg-0">
+          <div class="glass p-4" style="background:rgba(17,30,53,.6)">
+            <div class="d-flex gap-2 mb-3">
+              <div style="width:10px;height:10px;border-radius:50%;background:#ef4444"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#10b981"></div>
+            </div>
+            <div class="mono" style="font-size:.8rem;color:var(--muted);line-height:1.8">
+              <span style="color:#818cf8">const</span> <span style="color:#22d3ee">proyecto</span> = {<br>
+              &nbsp;&nbsp;<span style="color:#a78bfa">cliente</span>: <span style="color:#34d399">"Tú"</span>,<br>
+              &nbsp;&nbsp;<span style="color:#a78bfa">estado</span>: <span style="color:#f59e0b">"listo para empezar"</span>,<br>
+              &nbsp;&nbsp;<span style="color:#a78bfa">entrega</span>: <span style="color:#34d399">"en tiempo récord"</span>,<br>
+              &nbsp;&nbsp;<span style="color:#a78bfa">calidad</span>: <span style="color:#22d3ee">100</span><br>
+              };
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-5">
+    <div class="container">
+      <h2 class="text-center mb-2" style="font-weight:800;font-size:1.8rem">¿Por qué elegirnos?</h2>
+      <p class="text-center mb-5" style="color:var(--muted)">Todo lo que necesitas para tener presencia digital profesional</p>
+      <div class="row g-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="feature-card h-100">
+            <div class="feature-icon" style="background:rgba(99,102,241,.15)"><i class="fa-solid fa-palette" style="color:var(--primary)"></i></div>
+            <h6 style="font-weight:700">Diseño moderno</h6>
+            <p style="color:var(--muted);font-size:.875rem;margin-top:8px">Interfaces atractivas y funcionales adaptadas a tu marca.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="feature-card h-100">
+            <div class="feature-icon" style="background:rgba(34,211,238,.12)"><i class="fa-solid fa-bolt" style="color:var(--cyan)"></i></div>
+            <h6 style="font-weight:700">Entrega rápida</h6>
+            <p style="color:var(--muted);font-size:.875rem;margin-top:8px">Proyectos completados en el tiempo acordado, sin sorpresas.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="feature-card h-100">
+            <div class="feature-icon" style="background:rgba(16,185,129,.12)"><i class="fa-solid fa-mobile-screen" style="color:var(--green)"></i></div>
+            <h6 style="font-weight:700">Responsive</h6>
+            <p style="color:var(--muted);font-size:.875rem;margin-top:8px">Tu sitio se verá perfecto en celular, tablet y computadora.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="feature-card h-100">
+            <div class="feature-icon" style="background:rgba(245,158,11,.12)"><i class="fa-solid fa-headset" style="color:var(--amber)"></i></div>
+            <h6 style="font-weight:700">Soporte incluido</h6>
+            <p style="color:var(--muted);font-size:.875rem;margin-top:8px">Acompañamiento durante y después de la entrega del proyecto.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-5 my-4">
+    <div class="container">
+      <div class="glass p-5 text-center" style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(34,211,238,.06))">
+        <h2 style="font-weight:800;font-size:2rem;margin-bottom:16px">¿Listo para empezar?</h2>
+        <p style="color:var(--muted);margin-bottom:28px;max-width:480px;margin-inline:auto">Cuéntanos tu proyecto y te enviamos una propuesta sin compromiso.</p>
+        <button class="btn-glow" onclick="showView('v-form')" style="font-size:1rem;padding:14px 40px">
+          <i class="fa-solid fa-paper-plane me-2"></i>Enviar solicitud ahora
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container text-center">
+      <a href="#" class="nav-logo justify-content-center mb-3 d-inline-flex" onclick="secretClick(this); return false;" id="footer-logo" data-clicks="0">
+        <div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div>
+        <span class="nav-logo-text">Web<span>Craft</span></span>
+      </a>
+      <p style="color:var(--faint);font-size:.8rem">© 2026 WebCraft Studio. Todos los derechos reservados.</p>
+      <p style="color:var(--faint);font-size:.7rem;margin-top:4px"><i class="fa-solid fa-lock me-1"></i>Panel de administración</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: FORMULARIO
+══════════════════════════════════════════════════════════ -->
+<div id="v-form" class="view">
+  <nav class="top-nav">
+    <div class="container d-flex align-items-center gap-3">
+      <button class="btn-ghost" onclick="showView('v-landing')" style="padding:8px 16px"><i class="fa-solid fa-arrow-left me-1"></i>Volver</button>
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div>
+        <span class="nav-logo-text">Web<span>Craft</span></span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <div class="text-center mb-4">
+          <span class="hero-eyebrow"><i class="fa-solid fa-file-lines me-1"></i>Nueva solicitud</span>
+          <h1 style="font-size:1.9rem;font-weight:800;margin-top:12px">Cuéntanos tu proyecto</h1>
+          <p style="color:var(--muted)">Completa el formulario y te enviaremos una propuesta por WhatsApp.</p>
+        </div>
+
+        <div class="glass p-4 p-lg-5">
+          <!-- PASO 1: Datos personales -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">1</div>
+              <h6 style="font-weight:700;margin:0">Datos de contacto</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Nombre completo <span style="color:var(--red)">*</span></label>
+                <input type="text" class="form-control" id="f-nombre" placeholder="Juan Pérez">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Número de WhatsApp <span style="color:var(--red)">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text" style="background:rgba(7,13,26,.7);border-color:var(--border2);color:var(--muted);font-size:.875rem">+591</span>
+                  <input type="tel" class="form-control" id="f-whatsapp" placeholder="70000000" style="border-left:0">
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Correo electrónico <span style="color:var(--red)">*</span></label>
+                <input type="email" class="form-control" id="f-correo" placeholder="juan@ejemplo.com">
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 2: Proyecto -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">2</div>
+              <h6 style="font-weight:700;margin:0">Tu proyecto</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Tipo de página web <span style="color:var(--red)">*</span></label>
+                <select class="form-select" id="f-tipo">
+                  <option value="" disabled selected>Selecciona...</option>
+                  <option>Landing Page</option>
+                  <option>E-commerce / Tienda online</option>
+                  <option>Portfolio personal</option>
+                  <option>Blog / Noticias</option>
+                  <option>Sitio corporativo</option>
+                  <option>Sistema web / App</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Nombre de dominio (idea)</label>
+                <input type="text" class="form-control" id="f-dominio" placeholder="Ej: miempresa.com (opcional)">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descripción de tu página <span style="color:var(--red)">*</span></label>
+                <textarea class="form-control" id="f-desc" rows="4" placeholder="Describe lo que necesitas: qué hace tu negocio, qué secciones quieres, colores, estilo, funcionalidades especiales..."></textarea>
+                <div id="desc-counter" style="text-align:right;font-size:.75rem;color:var(--faint);margin-top:4px">0 / mín. 50 caracteres</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 3: Referencia -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">3</div>
+              <h6 style="font-weight:700;margin:0">Referencia visual <small style="font-weight:400;color:var(--muted)">(opcional)</small></h6>
+            </div>
+            <div class="d-flex gap-2 mb-3">
+              <button type="button" id="tab-url" class="btn-ghost active-tab" onclick="switchRefTab('url')" style="flex:1">
+                <i class="fa-solid fa-link me-1"></i>URL de referencia
+              </button>
+              <button type="button" id="tab-img" class="btn-ghost" onclick="switchRefTab('img')" style="flex:1">
+                <i class="fa-solid fa-image me-1"></i>Subir imagen
+              </button>
+            </div>
+            <div id="ref-url-panel">
+              <input type="url" class="form-control" id="f-urlref" placeholder="https://ejemplo.com (página que te gusta como referencia)">
+            </div>
+            <div id="ref-img-panel" class="d-none">
+              <div class="upload-zone" onclick="document.getElementById('f-imgref').click()" id="ref-zone">
+                <i class="fa-solid fa-cloud-arrow-up fa-2x mb-2"></i>
+                <p style="font-size:.875rem;color:var(--muted)">Haz clic o arrastra una imagen de referencia</p>
+                <p style="font-size:.75rem;color:var(--faint)">JPG, PNG, WEBP — máx. 2MB</p>
+              </div>
+              <input type="file" id="f-imgref" accept="image/*" class="d-none" onchange="previewRef(this)">
+              <div id="ref-preview" class="d-none mt-2 text-center">
+                <img id="ref-img-el" style="max-height:160px;border-radius:10px;border:1px solid var(--border2)">
+                <button type="button" class="btn-ghost d-block mx-auto mt-2" onclick="clearRef()" style="padding:4px 14px;font-size:.8rem"><i class="fa-solid fa-xmark me-1"></i>Quitar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBMIT -->
+          <div id="form-error" class="alert d-none" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:10px;font-size:.875rem"></div>
+          <button class="btn-glow w-100" onclick="submitForm()" style="font-size:1rem">
+            <i class="fa-solid fa-paper-plane me-2"></i>Enviar solicitud
+          </button>
+          <p style="text-align:center;color:var(--faint);font-size:.75rem;margin-top:12px"><i class="fa-solid fa-shield-halved me-1"></i>Tus datos están seguros y no serán compartidos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: FORM SUCCESS
+══════════════════════════════════════════════════════════ -->
+<div id="v-form-success" class="view">
+  <div class="container py-5 d-flex align-items-center justify-content-center" style="min-height:100vh">
+    <div class="text-center" style="max-width:500px">
+      <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--green),#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:2rem">✅</div>
+      <h2 style="font-weight:800;margin-bottom:12px">¡Solicitud enviada!</h2>
+      <p style="color:var(--muted);margin-bottom:8px">Hemos recibido tu proyecto. Te notificamos por <strong>WhatsApp y correo</strong> con el estado.</p>
+      <p style="color:var(--muted);margin-bottom:28px;font-size:.875rem">Guarda el link de seguimiento que te enviamos por WhatsApp para verificar el estado en cualquier momento.</p>
+      <div class="glass p-3 mb-4" style="text-align:left">
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:6px"><i class="fa-solid fa-circle-info me-1"></i>Tu token de seguimiento:</p>
+        <p class="mono" id="success-token" style="font-size:.8rem;color:var(--cyan);word-break:break-all"></p>
+      </div>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <button class="btn-glow" id="btn-ver-estado" onclick="">
+          <i class="fa-solid fa-eye me-1"></i>Ver estado
+        </button>
+        <button class="btn-ghost" onclick="showView('v-landing')">
+          <i class="fa-solid fa-house me-1"></i>Volver al inicio
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: STATUS LOOKUP
+══════════════════════════════════════════════════════════ -->
+<div id="v-status-lookup" class="view">
+  <nav class="top-nav">
+    <div class="container d-flex align-items-center gap-3">
+      <button class="btn-ghost" onclick="showView('v-landing')" style="padding:8px 16px"><i class="fa-solid fa-arrow-left me-1"></i>Volver</button>
+      <a href="#" class="nav-logo"><div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div><span class="nav-logo-text">Web<span>Craft</span></span></a>
+    </div>
+  </nav>
+  <div class="container py-5 d-flex align-items-center justify-content-center" style="min-height:80vh">
+    <div class="glass p-4 p-lg-5" style="max-width:440px;width:100%">
+      <h5 style="font-weight:700;margin-bottom:4px"><i class="fa-solid fa-magnifying-glass me-2" style="color:var(--cyan)"></i>Consultar solicitud</h5>
+      <p style="color:var(--muted);font-size:.875rem;margin-bottom:20px">Ingresa el token que recibiste por WhatsApp.</p>
+      <input type="text" class="form-control mb-3" id="lookup-token" placeholder="Pega tu token aquí...">
+      <div id="lookup-error" class="d-none mb-3" style="color:var(--red);font-size:.875rem"></div>
+      <button class="btn-glow w-100" onclick="lookupStatus()"><i class="fa-solid fa-search me-2"></i>Ver estado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: STATUS
+══════════════════════════════════════════════════════════ -->
+<div id="v-status" class="view">
+  <nav class="top-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="#" class="nav-logo"><div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div><span class="nav-logo-text">Web<span>Craft</span></span></a>
+      <button class="btn-ghost" onclick="showView('v-landing')" style="padding:8px 16px"><i class="fa-solid fa-house me-1"></i>Inicio</button>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <!-- Header info -->
+        <div class="glass p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+              <p style="font-size:.8rem;color:var(--muted);margin-bottom:4px">SOLICITUD</p>
+              <h5 id="st-nombre" style="font-weight:700;margin:0"></h5>
+              <p id="st-tipo" style="color:var(--muted);font-size:.875rem;margin:4px 0 0"></p>
+            </div>
+            <span id="st-badge" class="badge-estado"></span>
+          </div>
+          <!-- Progress bar -->
+          <div class="step-bar" id="st-steps"></div>
+          <p id="st-fecha" style="font-size:.75rem;color:var(--faint)"></p>
+        </div>
+
+        <!-- Dynamic content section -->
+        <div id="st-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: ADMIN LOGIN
+══════════════════════════════════════════════════════════ -->
+<div id="v-admin-login" class="view">
+  <div class="container d-flex align-items-center justify-content-center" style="min-height:100vh">
+    <div class="glass p-5" style="max-width:380px;width:100%">
+      <div class="text-center mb-4">
+        <div class="nav-logo-icon mx-auto mb-3" style="width:52px;height:52px"><i class="fa-solid fa-shield-halved" style="color:#fff;font-size:1.2rem"></i></div>
+        <h5 style="font-weight:800">Panel de Administración</h5>
+        <p style="color:var(--muted);font-size:.875rem">WebCraft Studio</p>
+      </div>
+      <label class="form-label">Contraseña</label>
+      <input type="password" class="form-control mb-3" id="admin-pass" placeholder="Contraseña del panel" onkeydown="if(event.key==='Enter')adminLogin()">
+      <div id="admin-login-err" class="d-none mb-3" style="color:var(--red);font-size:.875rem;text-align:center"></div>
+      <button class="btn-glow w-100" onclick="adminLogin()"><i class="fa-solid fa-unlock me-2"></i>Entrar</button>
+      <div class="text-center mt-3">
+        <button class="btn-ghost" onclick="showView('v-landing')" style="font-size:.8rem;padding:6px 16px"><i class="fa-solid fa-arrow-left me-1"></i>Volver al inicio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEW: ADMIN DASHBOARD
+══════════════════════════════════════════════════════════ -->
+<div id="v-admin" class="view">
+  <nav class="top-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="#" class="nav-logo"><div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div><span class="nav-logo-text">Web<span>Craft</span> <span style="color:var(--amber);font-size:.7rem;font-weight:600">ADMIN</span></span></a>
+      <div class="d-flex gap-2">
+        <button class="btn-ghost" onclick="loadAdmin()" style="padding:8px 16px"><i class="fa-solid fa-rotate-right me-1"></i>Actualizar</button>
+        <button class="btn-ghost" onclick="adminLogout()" style="padding:8px 16px;color:var(--red)"><i class="fa-solid fa-right-from-bracket me-1"></i>Salir</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <!-- Stats -->
+    <div class="row g-3 mb-4" id="admin-stats"></div>
+
+    <!-- Filtro -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+      <select class="form-select" id="admin-filter" onchange="filterTable()" style="max-width:200px;font-size:.875rem">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="oferta_enviada">Oferta enviada</option>
+        <option value="aceptado">Aceptado</option>
+        <option value="comprobante_enviado">Comprobante enviado</option>
+        <option value="en_desarrollo">En desarrollo</option>
+        <option value="completado">Completado</option>
+        <option value="rechazado_cliente">Rechazado</option>
+      </select>
+      <input type="text" class="form-control" id="admin-search" placeholder="Buscar por nombre..." oninput="filterTable()" style="max-width:220px;font-size:.875rem">
+    </div>
+
+    <!-- Table -->
+    <div class="glass" style="border-radius:14px;overflow:hidden">
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>ID</th><th>Nombre</th><th>WhatsApp</th><th>Tipo</th>
+              <th>Estado</th><th>Monto</th><th>Fecha</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+      <div id="admin-empty" class="d-none text-center py-5" style="color:var(--muted)">
+        <i class="fa-solid fa-inbox fa-2x mb-2"></i><br>No hay solicitudes aún
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ADMIN MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="admin-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="modal-title-name" style="font-weight:700"></h5>
+          <span id="modal-badge" class="badge-estado"></span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs px-3 pt-2">
+          <li class="nav-item"><a href="#" class="nav-link active" onclick="switchModalTab('info',this);return false">Información</a></li>
+          <li class="nav-item"><a href="#" class="nav-link" onclick="switchModalTab('oferta',this);return false">Propuesta</a></li>
+          <li class="nav-item"><a href="#" class="nav-link" onclick="switchModalTab('pago',this);return false">Pago</a></li>
+          <li class="nav-item"><a href="#" class="nav-link" onclick="switchModalTab('estado',this);return false">Estado</a></li>
+        </ul>
+
+        <!-- TAB: Info -->
+        <div id="mtab-info" class="p-4">
+          <div class="row g-3">
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">NOMBRE</p><p id="mi-nombre" style="font-weight:600"></p></div>
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">WHATSAPP</p><p id="mi-wa" style="font-weight:600"></p></div>
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">CORREO</p><p id="mi-correo" style="font-size:.875rem"></p></div>
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">TIPO</p><p id="mi-tipo" style="font-weight:600"></p></div>
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">DOMINIO</p><p id="mi-dominio" style="font-size:.875rem"></p></div>
+            <div class="col-6"><p style="font-size:.75rem;color:var(--muted)">FECHA</p><p id="mi-ts" style="font-size:.875rem"></p></div>
+            <div class="col-12"><p style="font-size:.75rem;color:var(--muted)">DESCRIPCIÓN</p><p id="mi-desc" style="font-size:.875rem;line-height:1.6"></p></div>
+            <div class="col-12" id="mi-ref-url-wrap"><p style="font-size:.75rem;color:var(--muted)">URL REFERENCIA</p><a id="mi-ref-url" href="#" target="_blank" style="color:var(--cyan);font-size:.875rem;word-break:break-all"></a></div>
+            <div class="col-12 text-center" id="mi-ref-img-wrap">
+              <p style="font-size:.75rem;color:var(--muted)">IMAGEN REFERENCIA</p>
+              <img id="mi-ref-img" style="max-height:200px;border-radius:10px;border:1px solid var(--border)">
+            </div>
+          </div>
+          <hr style="border-color:var(--border);margin:20px 0">
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Acción rápida:</p>
+          <button class="btn-ghost" onclick="adminSendConfirm()" id="btn-send-confirm">
+            <i class="fa-solid fa-check-double me-1"></i>Enviar confirmación de recibido
+          </button>
+        </div>
+
+        <!-- TAB: Oferta -->
+        <div id="mtab-oferta" class="p-4 d-none">
+          <p style="color:var(--muted);font-size:.875rem;margin-bottom:20px">Completa los detalles de la propuesta. Al enviar, el cliente recibirá un mensaje por WhatsApp.</p>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Monto total (Bs. o $)</label>
+              <input type="text" class="form-control" id="m-monto" placeholder="Ej: Bs. 500 o $80">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tiempo estimado de entrega</label>
+              <input type="text" class="form-control" id="m-tiempo" placeholder="Ej: 7-10 días hábiles">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción del precio / alcance</label>
+              <textarea class="form-control" id="m-razon" rows="3" placeholder="¿Qué incluye el proyecto? ¿Por qué ese costo?..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">QR de pago (imagen sin monto) <span style="color:var(--red)">*</span></label>
+              <div class="upload-zone" id="qr-zone" onclick="document.getElementById('m-qr-inp').click()">
+                <i class="fa-solid fa-qrcode fa-2x mb-2"></i>
+                <p style="font-size:.875rem;color:var(--muted)">Sube la imagen del QR de pago</p>
+                <p style="font-size:.75rem;color:var(--faint)">PNG, JPG — máx. 2MB (sin monto incluido)</p>
+              </div>
+              <input type="file" id="m-qr-inp" accept="image/*" class="d-none" onchange="previewQR(this)">
+              <div id="qr-preview-wrap" class="d-none mt-2 text-center">
+                <img id="qr-preview-img" class="qr-img">
+                <button type="button" class="btn-ghost d-block mx-auto mt-2" onclick="clearQR()" style="padding:4px 14px;font-size:.8rem"><i class="fa-solid fa-xmark me-1"></i>Quitar</button>
+              </div>
+              <div id="qr-existing" class="d-none mt-2 text-center">
+                <p style="font-size:.8rem;color:var(--muted);margin-bottom:8px">QR actual en Drive:</p>
+                <img id="qr-existing-img" class="qr-img">
+              </div>
+            </div>
+          </div>
+          <div id="oferta-err" class="d-none mb-3" style="color:var(--red);font-size:.875rem"></div>
+          <button class="btn-glow w-100" onclick="adminSendOffer()">
+            <i class="fa-solid fa-paper-plane me-2"></i>Enviar propuesta por WhatsApp
+          </button>
+        </div>
+
+        <!-- TAB: Pago -->
+        <div id="mtab-pago" class="p-4 d-none">
+          <div id="pago-sin-comprobante" class="text-center" style="color:var(--muted);padding:32px 0">
+            <i class="fa-solid fa-clock-rotate-left fa-2x mb-2"></i>
+            <p>El cliente aún no ha enviado el comprobante de pago.</p>
+          </div>
+          <div id="pago-con-comprobante" class="d-none text-center">
+            <p style="font-size:.8rem;color:var(--green);margin-bottom:12px"><i class="fa-solid fa-circle-check me-1"></i>Comprobante recibido</p>
+            <img id="comp-img" style="max-height:280px;border-radius:12px;border:1px solid var(--border2);margin-bottom:16px">
+            <div class="d-flex gap-2 justify-content-center">
+              <a id="comp-link" href="#" target="_blank" class="btn-ghost"><i class="fa-solid fa-external-link me-1"></i>Ver original</a>
+              <button class="btn-outline-green" onclick="adminConfirmPay()"><i class="fa-solid fa-check me-1"></i>Confirmar pago</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Estado -->
+        <div id="mtab-estado" class="p-4 d-none">
+          <p style="color:var(--muted);font-size:.875rem;margin-bottom:16px">Cambia el estado manualmente de la solicitud.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn-ghost" onclick="adminSetStatus('pendiente')">⏳ Pendiente</button>
+            <button class="btn-ghost" onclick="adminSetStatus('confirmado')">📬 Confirmado</button>
+            <button class="btn-ghost" onclick="adminSetStatus('en_desarrollo')">🚀 En desarrollo</button>
+            <button class="btn-ghost" onclick="adminSetStatus('completado')" style="color:var(--green)">✅ Completado</button>
+            <button class="btn-ghost" onclick="adminSetStatus('rechazado')" style="color:var(--red)">❌ Rechazado</button>
+          </div>
+          <hr style="border-color:var(--border);margin:20px 0">
+          <p style="font-size:.8rem;color:var(--muted)">Estado actual: <span id="modal-estado-actual" class="badge-estado ms-1"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  ⚙️ CONFIGURACIÓN — Cambia esto después de desplegar el Apps Script
+// ════════════════════════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjtNhDozvLAjs48OipPokaWWCZSVPJwpKfQuQdhv8E5IWhDHqjxzO2CG5QhgfhmGcT/exec';
+
+// ════════════════════════════════════════════════════════════
+//  API — JSONP (sin problemas de CORS)
+// ════════════════════════════════════════════════════════════
+function callAPI(params) {
+  return new Promise((resolve, reject) => {
+    const cb   = '__cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const tout = setTimeout(() => {
+      delete window[cb];
+      sc.parentNode && sc.parentNode.removeChild(sc);
+      reject(new Error('Timeout al conectar con el servidor'));
+    }, 45000);
+    window[cb] = data => {
+      clearTimeout(tout);
+      delete window[cb];
+      sc.parentNode && sc.parentNode.removeChild(sc);
+      resolve(data);
+    };
+    // Build URL — encode each param individually
+    let qs = 'callback=' + encodeURIComponent(cb);
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== '') {
+        qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v);
+      }
+    }
+    const sc = document.createElement('script');
+    sc.onerror = () => { clearTimeout(tout); delete window[cb]; reject(new Error('Error de red')); };
+    sc.src = SCRIPT_URL + '?' + qs;
+    document.head.appendChild(sc);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════════════════════
+function showLoad(msg = 'Procesando...') {
+  document.getElementById('loader-msg').textContent = msg;
+  document.getElementById('loader').classList.add('show');
+}
+function hideLoad() { document.getElementById('loader').classList.remove('show'); }
+
+function toast(msg, type = 'info') {
+  const box = document.getElementById('toast-box');
+  const el  = document.createElement('div');
+  const colors = { success: '#10b981', error: '#ef4444', info: '#6366f1', warn: '#f59e0b' };
+  el.className = 'toast-item';
+  el.style.borderLeft = `3px solid ${colors[type] || colors.info}`;
+  el.innerHTML = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function badgeHTML(estado) {
+  const map = {
+    pendiente: '⏳ Pendiente', confirmado: '📬 Confirmado',
+    oferta_enviada: '💼 Oferta enviada', aceptado: '✅ Aceptado',
+    rechazado_cliente: '❌ Rechazado', rechazado: '❌ Rechazado',
+    comprobante_enviado: '💳 Comprobante enviado',
+    en_desarrollo: '🚀 En desarrollo', completado: '🎉 Completado'
+  };
+  return `<span class="badge-estado s-${estado}">${map[estado] || estado}</span>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROUTER — Detecta URL params al cargar
+// ════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('admin')) {
+    showView('v-admin-login');
+  } else if (params.get('token')) {
+    loadStatusByToken(params.get('token'));
+  }
+
+  // Description counter
+  document.getElementById('f-desc')?.addEventListener('input', function() {
+    document.getElementById('desc-counter').textContent = this.value.length + ' / mín. 50 caracteres';
+  });
+});
+
+// Secret admin: 5 clicks on logo/footer
+let _secretClicks = 0;
+function secretClick(el) {
+  _secretClicks++;
+  if (_secretClicks >= 5) { _secretClicks = 0; showView('v-admin-login'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  FORM — Cliente envía solicitud
+// ════════════════════════════════════════════════════════════
+let _refImgB64  = '';
+let _refImgMime = '';
+let _refTab     = 'url';
+
+function switchRefTab(tab) {
+  _refTab = tab;
+  document.getElementById('ref-url-panel').classList.toggle('d-none', tab !== 'url');
+  document.getElementById('ref-img-panel').classList.toggle('d-none', tab !== 'img');
+  const tabUrl = document.getElementById('tab-url');
+  const tabImg = document.getElementById('tab-img');
+  tabUrl.style.background = tab === 'url' ? 'rgba(99,102,241,.2)' : '';
+  tabImg.style.background = tab === 'img' ? 'rgba(99,102,241,.2)' : '';
+}
+
+async function previewRef(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  _refImgMime = file.type;
+  _refImgB64  = await compressImg(file, 600, 0.65);
+  const el = document.getElementById('ref-img-el');
+  el.src = 'data:' + file.type + ';base64,' + _refImgB64;
+  document.getElementById('ref-preview').classList.remove('d-none');
+  document.getElementById('ref-zone').classList.add('d-none');
+}
+
+function clearRef() {
+  _refImgB64 = ''; _refImgMime = '';
+  document.getElementById('ref-preview').classList.add('d-none');
+  document.getElementById('ref-zone').classList.remove('d-none');
+  document.getElementById('f-imgref').value = '';
+}
+
+async function submitForm() {
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const waRaw    = document.getElementById('f-whatsapp').value.trim();
+  const correo   = document.getElementById('f-correo').value.trim();
+  const tipo     = document.getElementById('f-tipo').value;
+  const dominio  = document.getElementById('f-dominio').value.trim();
+  const desc     = document.getElementById('f-desc').value.trim();
+  const urlRef   = document.getElementById('f-urlref').value.trim();
+
+  const errEl = document.getElementById('form-error');
+  errEl.classList.add('d-none');
+
+  if (!nombre || !waRaw || !correo || !tipo || !desc) {
+    errEl.textContent = '⚠️ Por favor completa todos los campos obligatorios.';
+    errEl.classList.remove('d-none'); return;
+  }
+  if (desc.length < 50) {
+    errEl.textContent = '⚠️ La descripción debe tener al menos 50 caracteres.';
+    errEl.classList.remove('d-none'); return;
+  }
+  if (!/\S+@\S+\.\S+/.test(correo)) {
+    errEl.textContent = '⚠️ Ingresa un correo electrónico válido.';
+    errEl.classList.remove('d-none'); return;
+  }
+
+  const whatsapp = '591' + waRaw.replace(/\D/g, '');
+
+  showLoad('Enviando solicitud...');
+  try {
+    const params = { action: 'submit', nombre, whatsapp, correo, tipo, dominio, desc, urlRef };
+    if (_refTab === 'img' && _refImgB64) {
+      params.imgB64  = _refImgB64;
+      params.imgMime = _refImgMime;
+    }
+    const res = await callAPI(params);
+    hideLoad();
+    if (res.success) {
+      document.getElementById('success-token').textContent = res.token;
+      document.getElementById('btn-ver-estado').onclick = () => loadStatusByToken(res.token);
+      showView('v-form-success');
+      toast('✅ Solicitud enviada correctamente', 'success');
+    } else {
+      errEl.textContent = '⚠️ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+      errEl.classList.remove('d-none');
+    }
+  } catch(e) {
+    hideLoad();
+    errEl.textContent = '⚠️ Error de conexión. Verifica la URL del Apps Script y vuelve a intentar.';
+    errEl.classList.remove('d-none');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  STATUS — Página de estado del cliente
+// ════════════════════════════════════════════════════════════
+let _currentToken = '';
+let _currentData  = null;
+
+async function lookupStatus() {
+  const token = document.getElementById('lookup-token').value.trim();
+  const errEl = document.getElementById('lookup-error');
+  errEl.classList.add('d-none');
+  if (!token) { errEl.textContent = 'Ingresa tu token.'; errEl.classList.remove('d-none'); return; }
+  loadStatusByToken(token);
+}
+
+async function loadStatusByToken(token) {
+  _currentToken = token;
+  showLoad('Cargando estado...');
+  try {
+    const res = await callAPI({ action: 'getStatus', token });
+    hideLoad();
+    if (res.success) {
+      _currentData = res.data;
+      renderStatus(res.data);
+      showView('v-status');
+    } else {
+      showView('v-status-lookup');
+      const errEl = document.getElementById('lookup-error');
+      errEl.textContent = '❌ ' + (res.error || 'Token no válido');
+      errEl.classList.remove('d-none');
+      toast('Token no válido', 'error');
+    }
+  } catch(e) {
+    hideLoad();
+    toast('Error de conexión', 'error');
+    showView('v-status-lookup');
+  }
+}
+
+const STEPS = [
+  { key: 'pendiente',          label: 'Recibido' },
+  { key: 'confirmado',         label: 'Revisado' },
+  { key: 'oferta_enviada',     label: 'Propuesta' },
+  { key: 'aceptado',           label: 'Aceptado' },
+  { key: 'comprobante_enviado',label: 'Pago' },
+  { key: 'en_desarrollo',      label: 'Desarrollo' },
+  { key: 'completado',         label: 'Completado' },
+];
+const STEP_ORDER = STEPS.map(s => s.key);
+
+function renderStatus(d) {
+  document.getElementById('st-nombre').textContent = d.nombre;
+  document.getElementById('st-tipo').textContent   = d.tipo;
+  document.getElementById('st-badge').outerHTML = badgeHTML(d.estado).replace('span', 'span id="st-badge"');
+  document.getElementById('st-fecha').textContent  = 'Solicitud enviada: ' + (d.timestamp || '—');
+
+  // Steps
+  const curIdx = STEP_ORDER.indexOf(d.estado);
+  let stepsHTML = '';
+  STEPS.forEach((s, i) => {
+    const cls = i < curIdx ? 'done' : i === curIdx ? 'active' : 'next';
+    const icon = i < curIdx ? '<i class="fa-solid fa-check" style="font-size:.6rem"></i>' : (i + 1);
+    stepsHTML += `<div class="step"><div class="step-dot ${cls}">${icon}</div><div class="step-lbl">${s.label}</div></div>`;
+    if (i < STEPS.length - 1) stepsHTML += `<div class="step-line ${i < curIdx ? 'done' : ''}"></div>`;
+  });
+  document.getElementById('st-steps').innerHTML = stepsHTML;
+
+  // Dynamic content
+  const box = document.getElementById('st-content');
+  box.innerHTML = '';
+
+  if (d.estado === 'rechazado_cliente' || d.estado === 'rechazado') {
+    box.innerHTML = `<div class="glass p-4 text-center">
+      <div style="font-size:3rem;margin-bottom:12px">❌</div>
+      <h5>Propuesta rechazada</h5>
+      <p style="color:var(--muted)">Rechazaste la propuesta. Puedes contactarnos si deseas negociar.</p>
+      <button class="btn-glow mt-3" onclick="showView('v-landing')">Volver al inicio</button>
+    </div>`;
+    return;
+  }
+
+  if (d.estado === 'pendiente' || d.estado === 'confirmado') {
+    box.innerHTML = `<div class="glass p-4 text-center">
+      <div style="font-size:3rem;margin-bottom:12px">⏳</div>
+      <h5>Tu solicitud está siendo revisada</h5>
+      <p style="color:var(--muted)">Nuestro equipo está evaluando tu proyecto. Te notificaremos por WhatsApp cuando tengamos una propuesta.</p>
+    </div>`;
+    return;
+  }
+
+  if (d.estado === 'oferta_enviada') {
+    const mitad = d.monto ? (parseFloat(d.monto) / 2 || d.monto + ' (50%)') : '—';
+    box.innerHTML = `<div class="glass p-4">
+      <h5 style="font-weight:700;margin-bottom:4px">💼 Propuesta recibida</h5>
+      <p style="color:var(--muted);font-size:.875rem;margin-bottom:20px">Revisa los detalles y acepta o rechaza.</p>
+      <div class="row g-3 mb-4">
+        <div class="col-6"><div class="stat-card"><div class="stat-num" style="font-size:1.4rem;color:var(--green)">${d.monto || '—'}</div><div class="stat-lbl">Costo total</div></div></div>
+        <div class="col-6"><div class="stat-card"><div class="stat-num" style="font-size:1.4rem;color:var(--cyan)">${d.tiempo || '—'}</div><div class="stat-lbl">Tiempo estimado</div></div></div>
+      </div>
+      ${d.razon ? `<div class="glass-sm p-3 mb-4" style="background:rgba(99,102,241,.05)"><p style="font-size:.75rem;color:var(--muted);margin-bottom:4px">DESCRIPCIÓN DE LA PROPUESTA</p><p style="font-size:.875rem">${d.razon}</p></div>` : ''}
+      <div id="oferta-response-err" class="d-none mb-2" style="color:var(--red);font-size:.875rem"></div>
+      <div class="d-flex gap-3 flex-wrap">
+        <button class="btn-outline-green flex-fill" onclick="clientRespond(true)"><i class="fa-solid fa-check me-1"></i>✅ Aceptar propuesta</button>
+        <button class="btn-outline-red flex-fill" onclick="clientRespond(false)"><i class="fa-solid fa-xmark me-1"></i>❌ Rechazar</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  if (d.estado === 'aceptado') {
+    box.innerHTML = `<div class="glass p-4">
+      <div class="text-center mb-4">
+        <div style="font-size:2rem;margin-bottom:8px">✅</div>
+        <h5 style="font-weight:700">¡Propuesta aceptada!</h5>
+        <p style="color:var(--muted);font-size:.875rem">Ahora realiza el pago inicial del 50% para confirmar el proyecto.</p>
+      </div>
+      ${d.qrUrl ? `<div class="text-center mb-4">
+        <p style="font-size:.875rem;color:var(--muted);margin-bottom:12px">Escanea el QR para realizar el pago:</p>
+        <img src="${d.qrUrl}" class="qr-img mx-auto d-block mb-2" style="max-width:200px">
+        <p style="font-size:.8rem;color:var(--amber)"><i class="fa-solid fa-info-circle me-1"></i>Este QR no tiene monto — el monto a pagar es: <strong>${d.monto}</strong> (50% = monto/2)</p>
+      </div>` : '<p style="color:var(--muted);text-align:center">El administrador cargará el QR en breve.</p>'}
+      <hr style="border-color:var(--border)">
+      <h6 style="font-weight:700;margin-bottom:12px"><i class="fa-solid fa-upload me-1" style="color:var(--cyan)"></i>Subir comprobante de pago</h6>
+      <div class="upload-zone" id="comp-zone" onclick="document.getElementById('f-comp').click()">
+        <i class="fa-solid fa-file-image fa-2x mb-2"></i>
+        <p style="font-size:.875rem;color:var(--muted)">Sube tu comprobante de pago</p>
+      </div>
+      <input type="file" id="f-comp" accept="image/*" class="d-none" onchange="previewComp(this)">
+      <div id="comp-preview-wrap" class="d-none mt-2 text-center">
+        <img id="comp-prev-img" style="max-height:160px;border-radius:10px;border:1px solid var(--border2)">
+        <button class="btn-ghost d-block mx-auto mt-2" onclick="clearComp()" style="padding:4px 14px;font-size:.8rem">Quitar</button>
+      </div>
+      <div id="comp-err" class="d-none mb-2 mt-2" style="color:var(--red);font-size:.875rem"></div>
+      <button class="btn-glow w-100 mt-3" onclick="submitProof()"><i class="fa-solid fa-paper-plane me-2"></i>Enviar comprobante</button>
+    </div>`;
+    setupCompDrop();
+    return;
+  }
+
+  if (d.estado === 'comprobante_enviado') {
+    box.innerHTML = `<div class="glass p-4 text-center">
+      <div style="font-size:3rem;margin-bottom:12px">💳</div>
+      <h5>Comprobante enviado</h5>
+      <p style="color:var(--muted)">Estamos verificando tu pago. Te notificaremos por WhatsApp cuando esté confirmado.</p>
+    </div>`;
+    return;
+  }
+
+  if (d.estado === 'en_desarrollo') {
+    box.innerHTML = `<div class="glass p-4 text-center">
+      <div style="font-size:3rem;margin-bottom:12px">🚀</div>
+      <h5 style="font-weight:700">¡Pago confirmado! Tu proyecto está en desarrollo</h5>
+      <p style="color:var(--muted)">Tiempo estimado: <strong>${d.tiempo || '—'}</strong>. Te contactaremos para actualizaciones.</p>
+    </div>`;
+    return;
+  }
+
+  if (d.estado === 'completado') {
+    box.innerHTML = `<div class="glass p-4 text-center">
+      <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+      <h5 style="font-weight:700">¡Proyecto completado!</h5>
+      <p style="color:var(--muted)">Tu página web está lista. Nos pondremos en contacto para entregarte los accesos.</p>
+      <p style="color:var(--green);margin-top:12px;font-weight:600">¡Gracias por confiar en WebCraft Studio!</p>
+    </div>`;
+  }
+}
+
+// Client respond (accept/reject offer)
+async function clientRespond(acepta) {
+  showLoad(acepta ? 'Aceptando propuesta...' : 'Rechazando...');
+  try {
+    const res = await callAPI({ action: 'respond', token: _currentToken, acepta: acepta ? 'true' : 'false' });
+    hideLoad();
+    if (res.success) {
+      toast(acepta ? '✅ ¡Propuesta aceptada!' : 'Propuesta rechazada', acepta ? 'success' : 'warn');
+      _currentData.estado = res.estado;
+      if (res.qrUrl) _currentData.qrUrl = res.qrUrl;
+      if (res.monto) _currentData.monto = res.monto;
+      renderStatus(_currentData);
+    } else {
+      toast('Error: ' + (res.error || 'No se pudo procesar'), 'error');
+    }
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+// Comprobante
+let _compB64 = ''; let _compMime = '';
+async function previewComp(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0]; _compMime = file.type;
+  _compB64 = await compressImg(file, 800, 0.7);
+  const img = document.getElementById('comp-prev-img');
+  img.src = 'data:' + file.type + ';base64,' + _compB64;
+  document.getElementById('comp-preview-wrap').classList.remove('d-none');
+}
+function clearComp() {
+  _compB64 = ''; _compMime = '';
+  document.getElementById('comp-preview-wrap').classList.add('d-none');
+  document.getElementById('f-comp').value = '';
+}
+function setupCompDrop() {
+  const zone = document.getElementById('comp-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', async e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    const dt = new DataTransfer(); dt.items.add(f);
+    const inp = document.getElementById('f-comp'); inp.files = dt.files;
+    await previewComp(inp);
+  });
+}
+async function submitProof() {
+  const errEl = document.getElementById('comp-err');
+  errEl.classList.add('d-none');
+  if (!_compB64) { errEl.textContent = 'Por favor selecciona la imagen del comprobante.'; errEl.classList.remove('d-none'); return; }
+  showLoad('Enviando comprobante...');
+  try {
+    const res = await callAPI({ action: 'uploadProof', token: _currentToken, compB64: _compB64, compMime: _compMime });
+    hideLoad();
+    if (res.success) {
+      toast('✅ Comprobante enviado correctamente', 'success');
+      _currentData.estado = 'comprobante_enviado';
+      renderStatus(_currentData);
+    } else {
+      errEl.textContent = res.error || 'Error al enviar'; errEl.classList.remove('d-none');
+    }
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN
+// ════════════════════════════════════════════════════════════
+let _adminPass = '';
+let _allData   = [];
+let _modalData = null;
+
+function adminLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (!pass) return;
+  _adminPass = pass;
+  sessionStorage.setItem('admin_pass', pass);
+  loadAdmin();
+}
+
+function adminLogout() {
+  _adminPass = ''; sessionStorage.removeItem('admin_pass');
+  showView('v-landing');
+}
+
+async function loadAdmin() {
+  if (!_adminPass) {
+    _adminPass = sessionStorage.getItem('admin_pass') || '';
+    if (!_adminPass) { showView('v-admin-login'); return; }
+  }
+  showLoad('Cargando solicitudes...');
+  try {
+    const res = await callAPI({ action: 'getAll', pass: _adminPass });
+    hideLoad();
+    if (!res.success) {
+      document.getElementById('admin-login-err').textContent = res.error || 'Error';
+      document.getElementById('admin-login-err').classList.remove('d-none');
+      showView('v-admin-login'); return;
+    }
+    _allData = res.data || [];
+    renderAdminStats(_allData);
+    renderAdminTable(_allData);
+    showView('v-admin');
+    document.getElementById('admin-login-err').classList.add('d-none');
+  } catch(e) {
+    hideLoad(); toast('Error de conexión', 'error');
+  }
+}
+
+function renderAdminStats(data) {
+  const counts = {};
+  data.forEach(r => { counts[r.estado] = (counts[r.estado] || 0) + 1; });
+  const stats = [
+    { label: 'Total', num: data.length, color: 'var(--primary)' },
+    { label: 'Pendientes', num: (counts.pendiente || 0) + (counts.confirmado || 0), color: 'var(--amber)' },
+    { label: 'En oferta', num: (counts.oferta_enviada || 0) + (counts.aceptado || 0) + (counts.comprobante_enviado || 0), color: 'var(--purple)' },
+    { label: 'En desarrollo', num: counts.en_desarrollo || 0, color: 'var(--cyan)' },
+    { label: 'Completados', num: counts.completado || 0, color: 'var(--green)' },
+  ];
+  document.getElementById('admin-stats').innerHTML = stats.map(s =>
+    `<div class="col-6 col-md-4 col-lg"><div class="stat-card"><div class="stat-num" style="color:${s.color}">${s.num}</div><div class="stat-lbl">${s.label}</div></div></div>`
+  ).join('');
+}
+
+function filterTable() {
+  const f = document.getElementById('admin-filter').value;
+  const q = document.getElementById('admin-search').value.toLowerCase();
+  const filtered = _allData.filter(r =>
+    (!f || r.estado === f) &&
+    (!q || r.nombre.toLowerCase().includes(q) || r.whatsapp.includes(q))
+  );
+  renderAdminTable(filtered);
+}
+
+function renderAdminTable(data) {
+  const tbody = document.getElementById('admin-tbody');
+  const empty = document.getElementById('admin-empty');
+  if (!data.length) {
+    tbody.innerHTML = ''; empty.classList.remove('d-none'); return;
+  }
+  empty.classList.add('d-none');
+  tbody.innerHTML = data.map(r => `
+    <tr onclick="openModal('${r.id}')">
+      <td><span class="mono" style="font-size:.75rem;color:var(--faint)">${r.id}</span></td>
+      <td><strong>${r.nombre}</strong></td>
+      <td style="color:var(--muted)">${r.whatsapp}</td>
+      <td style="color:var(--muted);font-size:.8rem">${r.tipo}</td>
+      <td>${badgeHTML(r.estado)}</td>
+      <td style="color:var(--green);font-weight:600">${r.monto || '—'}</td>
+      <td style="color:var(--faint);font-size:.8rem">${(r.timestamp || '').split(' ')[0] || '—'}</td>
+      <td><span style="color:var(--primary);font-size:.8rem"><i class="fa-solid fa-chevron-right"></i></span></td>
+    </tr>
+  `).join('');
+}
+
+function openModal(id) {
+  const d = _allData.find(r => r.id === id);
+  if (!d) return;
+  _modalData = d;
+
+  document.getElementById('modal-title-name').textContent = d.nombre;
+  document.getElementById('modal-badge').outerHTML = badgeHTML(d.estado).replace('span', 'span id="modal-badge"');
+
+  // Info tab
+  document.getElementById('mi-nombre').textContent  = d.nombre;
+  document.getElementById('mi-wa').textContent      = d.whatsapp;
+  document.getElementById('mi-correo').textContent  = d.correo;
+  document.getElementById('mi-tipo').textContent    = d.tipo;
+  document.getElementById('mi-dominio').textContent = d.dominio || '—';
+  document.getElementById('mi-ts').textContent      = d.timestamp || '—';
+  document.getElementById('mi-desc').textContent    = d.desc;
+
+  const refUrlWrap = document.getElementById('mi-ref-url-wrap');
+  const refImgWrap = document.getElementById('mi-ref-img-wrap');
+  if (d.urlRef) {
+    refUrlWrap.classList.remove('d-none');
+    document.getElementById('mi-ref-url').href        = d.urlRef;
+    document.getElementById('mi-ref-url').textContent = d.urlRef;
+  } else refUrlWrap.classList.add('d-none');
+  if (d.imgRefUrl) {
+    refImgWrap.classList.remove('d-none');
+    document.getElementById('mi-ref-img').src = d.imgRefUrl;
+  } else refImgWrap.classList.add('d-none');
+
+  // Oferta tab: pre-fill if exists
+  document.getElementById('m-monto').value  = d.monto  || '';
+  document.getElementById('m-tiempo').value = d.tiempo || '';
+  document.getElementById('m-razon').value  = d.razon  || '';
+  const qrExist = document.getElementById('qr-existing');
+  if (d.qrUrl) {
+    qrExist.classList.remove('d-none');
+    document.getElementById('qr-existing-img').src = d.qrUrl;
+  } else qrExist.classList.add('d-none');
+  document.getElementById('qr-preview-wrap').classList.add('d-none');
+
+  // Pago tab
+  if (d.comprobanteUrl) {
+    document.getElementById('pago-sin-comprobante').classList.add('d-none');
+    document.getElementById('pago-con-comprobante').classList.remove('d-none');
+    document.getElementById('comp-img').src = d.comprobanteUrl;
+    document.getElementById('comp-link').href = d.comprobanteUrl;
+  } else {
+    document.getElementById('pago-sin-comprobante').classList.remove('d-none');
+    document.getElementById('pago-con-comprobante').classList.add('d-none');
+  }
+
+  // Estado tab
+  const estadoEl = document.getElementById('modal-estado-actual');
+  estadoEl.className = 'badge-estado s-' + d.estado + ' ms-1';
+  estadoEl.textContent = d.estado;
+
+  switchModalTab('info', document.querySelector('#admin-modal .nav-link'));
+  new bootstrap.Modal(document.getElementById('admin-modal')).show();
+}
+
+function switchModalTab(tab, el) {
+  document.querySelectorAll('#admin-modal .nav-link').forEach(a => a.classList.remove('active'));
+  el && el.classList.add('active');
+  ['info','oferta','pago','estado'].forEach(t => {
+    document.getElementById('mtab-' + t).classList.toggle('d-none', t !== tab);
+  });
+}
+
+async function adminSendConfirm() {
+  if (!_modalData) return;
+  if (!confirm('¿Enviar confirmación de recibido al cliente por WhatsApp?')) return;
+  showLoad('Enviando confirmación...');
+  try {
+    const res = await callAPI({ action: 'sendConfirm', id: _modalData.id, pass: _adminPass });
+    hideLoad();
+    if (res.success) {
+      toast('✅ Confirmación enviada por WhatsApp', 'success');
+      _modalData.estado = 'confirmado';
+      await loadAdmin();
+    } else toast('Error: ' + (res.error || ''), 'error');
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+let _qrB64 = ''; let _qrMime = '';
+async function previewQR(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0]; _qrMime = file.type;
+  _qrB64 = await compressImg(file, 500, 0.8);
+  const img = document.getElementById('qr-preview-img');
+  img.src = 'data:' + file.type + ';base64,' + _qrB64;
+  document.getElementById('qr-preview-wrap').classList.remove('d-none');
+}
+function clearQR() {
+  _qrB64 = ''; _qrMime = '';
+  document.getElementById('qr-preview-wrap').classList.add('d-none');
+  document.getElementById('m-qr-inp').value = '';
+}
+
+async function adminSendOffer() {
+  const monto  = document.getElementById('m-monto').value.trim();
+  const tiempo = document.getElementById('m-tiempo').value.trim();
+  const razon  = document.getElementById('m-razon').value.trim();
+  const errEl  = document.getElementById('oferta-err');
+  errEl.classList.add('d-none');
+
+  if (!monto || !tiempo || !razon) {
+    errEl.textContent = 'Completa monto, tiempo y descripción.'; errEl.classList.remove('d-none'); return;
+  }
+  if (!_qrB64 && !(_modalData.qrUrl)) {
+    errEl.textContent = 'Debes subir la imagen del QR de pago.'; errEl.classList.remove('d-none'); return;
+  }
+  if (!confirm('¿Enviar esta propuesta al cliente por WhatsApp?')) return;
+
+  showLoad('Enviando propuesta...');
+  const params = { action: 'sendOffer', id: _modalData.id, pass: _adminPass, monto, tiempo, razon };
+  if (_qrB64) { params.qrB64 = _qrB64; params.qrMime = _qrMime; }
+  try {
+    const res = await callAPI(params);
+    hideLoad();
+    if (res.success) {
+      toast('✅ Propuesta enviada por WhatsApp', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('admin-modal'))?.hide();
+      await loadAdmin();
+    } else { errEl.textContent = res.error || 'Error'; errEl.classList.remove('d-none'); }
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+async function adminConfirmPay() {
+  if (!_modalData) return;
+  if (!confirm('¿Confirmar el pago y notificar al cliente que su proyecto inicia?')) return;
+  showLoad('Confirmando pago...');
+  try {
+    const res = await callAPI({ action: 'confirmPay', id: _modalData.id, pass: _adminPass });
+    hideLoad();
+    if (res.success) {
+      toast('✅ Pago confirmado. Cliente notificado.', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('admin-modal'))?.hide();
+      await loadAdmin();
+    } else toast('Error: ' + (res.error || ''), 'error');
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+async function adminSetStatus(estado) {
+  if (!_modalData) return;
+  if (!confirm('¿Cambiar estado a "' + estado + '"?')) return;
+  showLoad('Actualizando...');
+  try {
+    const res = await callAPI({ action: 'setStatus', id: _modalData.id, pass: _adminPass, estado });
+    hideLoad();
+    if (res.success) {
+      toast('Estado actualizado', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('admin-modal'))?.hide();
+      await loadAdmin();
+    } else toast('Error: ' + (res.error || ''), 'error');
+  } catch(e) { hideLoad(); toast('Error de conexión', 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  IMAGE UTILS
+// ════════════════════════════════════════════════════════════
+function compressImg(file, maxW, quality) {
+  return new Promise(resolve => {
+    const canvas = document.createElement('canvas');
+    const img    = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(dataUrl.split(',')[1]);
+    };
+    img.onerror = () => resolve('');
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  DRAG & DROP for upload zones
+// ════════════════════════════════════════════════════════════
+['ref-zone', 'qr-zone'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', async e => {
+    e.preventDefault(); el.classList.remove('dragover');
+    const file = e.dataTransfer.files[0]; if (!file) return;
+    const dt = new DataTransfer(); dt.items.add(file);
+    if (id === 'ref-zone') { const i = document.getElementById('f-imgref'); i.files = dt.files; await previewRef(i); }
+    else if (id === 'qr-zone') { const i = document.getElementById('m-qr-inp'); i.files = dt.files; await previewQR(i); }
+  });
+});
+</script>
+</body>
+</html>
