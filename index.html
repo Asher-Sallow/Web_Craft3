@@ -318,7 +318,7 @@
         <div class="nav-logo-icon"><i class="fa-solid fa-code" style="color:#fff;font-size:.9rem"></i></div>
         <span class="nav-logo-text">Web<span>Craft</span></span>
       </a>
-      <p style="color:var(--faint);font-size:.8rem">© 2026 WebCraft Studio. Todos los derechos reservados.</p>
+      <p style="color:var(--faint);font-size:.8rem">© 2025 WebCraft Studio. Todos los derechos reservados.</p>
       <p style="color:var(--faint);font-size:.7rem;margin-top:4px"><i class="fa-solid fa-lock me-1"></i>Panel de administración</p>
     </div>
   </footer>
@@ -542,9 +542,6 @@
         <h5 style="font-weight:800">Panel de Administración</h5>
         <p style="color:var(--muted);font-size:.875rem">WebCraft Studio</p>
       </div>
-      <label class="form-label">URL de tu sitio web</label>
-      <input type="url" class="form-control mb-3" id="admin-site-url" placeholder="https://tuusuario.github.io/repo">
-      <p style="font-size:.72rem;color:var(--faint);margin-top:-10px;margin-bottom:14px"><i class="fa-solid fa-circle-info me-1"></i>Se usa para generar los links en los WhatsApp al cliente.</p>
       <label class="form-label">Contraseña</label>
       <input type="password" class="form-control mb-3" id="admin-pass" placeholder="Contraseña del panel" onkeydown="if(event.key==='Enter')adminLogin()">
       <div id="admin-login-err" class="d-none mb-3" style="color:var(--red);font-size:.875rem;text-align:center"></div>
@@ -736,37 +733,21 @@
 // ════════════════════════════════════════════════════════════
 //  ⚙️ CONFIGURACIÓN — Cambia esto después de desplegar el Apps Script
 // ════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjtNhDozvLAjs48OipPokaWWCZSVPJwpKfQuQdhv8E5IWhDHqjxzO2CG5QhgfhmGcT/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8TiJ4Y705UGTsQatVRN_l0uPMGlOsUUapgPuVY_VZghzU3KeAII8hoeb9Zg2nouKY/exec';
 
 // ════════════════════════════════════════════════════════════
-//  API — JSONP (sin problemas de CORS)
+//  API — fetch POST (soporta imágenes grandes, sin CORS)
 // ════════════════════════════════════════════════════════════
-function callAPI(params) {
-  return new Promise((resolve, reject) => {
-    const cb   = '__cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    const tout = setTimeout(() => {
-      delete window[cb];
-      sc.parentNode && sc.parentNode.removeChild(sc);
-      reject(new Error('Timeout al conectar con el servidor'));
-    }, 45000);
-    window[cb] = data => {
-      clearTimeout(tout);
-      delete window[cb];
-      sc.parentNode && sc.parentNode.removeChild(sc);
-      resolve(data);
-    };
-    // Build URL — encode each param individually
-    let qs = 'callback=' + encodeURIComponent(cb);
-    for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null && v !== '') {
-        qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v);
-      }
-    }
-    const sc = document.createElement('script');
-    sc.onerror = () => { clearTimeout(tout); delete window[cb]; reject(new Error('Error de red')); };
-    sc.src = SCRIPT_URL + '?' + qs;
-    document.head.appendChild(sc);
+async function callAPI(params) {
+  // POST con body texto plano evita preflight CORS y no tiene límite de tamaño
+  // Apps Script acepta esto y retorna JSON con CORS headers
+  const resp = await fetch(SCRIPT_URL, {
+    method  : 'POST',
+    body    : JSON.stringify(params)
+    // Sin Content-Type → browser envía text/plain → sin preflight CORS
   });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1154,24 +1135,14 @@ async function submitProof() {
 let _adminPass = '';
 let _allData   = [];
 let _modalData = null;
-let _siteUrl   = localStorage.getItem('wc_site_url') || '';
 
 function adminLogin() {
-  const pass    = document.getElementById('admin-pass').value;
-  const siteRaw = (document.getElementById('admin-site-url')?.value || '').trim();
+  const pass = document.getElementById('admin-pass').value;
   if (!pass) return;
   _adminPass = pass;
-  if (siteRaw) { _siteUrl = siteRaw.replace(/\/$/, ''); localStorage.setItem('wc_site_url', _siteUrl); }
   sessionStorage.setItem('admin_pass', pass);
   loadAdmin();
 }
-
-// Pre-fill site URL field if already saved
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('wc_site_url');
-  const el    = document.getElementById('admin-site-url');
-  if (saved && el) el.value = saved;
-}, { once: false });
 
 function adminLogout() {
   _adminPass = ''; sessionStorage.removeItem('admin_pass');
@@ -1321,7 +1292,7 @@ async function adminSendConfirm() {
   if (!confirm('¿Enviar confirmación de recibido al cliente por WhatsApp?')) return;
   showLoad('Enviando confirmación...');
   try {
-    const res = await callAPI({ action: 'sendConfirm', id: _modalData.id, pass: _adminPass, siteUrl: _siteUrl });
+    const res = await callAPI({ action: 'sendConfirm', id: _modalData.id, pass: _adminPass });
     hideLoad();
     if (res.success) {
       toast('✅ Confirmación enviada por WhatsApp', 'success');
@@ -1364,8 +1335,8 @@ async function adminSendOffer() {
   }
   if (!confirm('¿Enviar esta propuesta al cliente por WhatsApp?')) return;
 
-  showLoad('Subiendo QR...');
-  const params = { action: 'sendOffer', id: _modalData.id, pass: _adminPass, monto, tiempo, razon, siteUrl: _siteUrl };
+  showLoad('Enviando propuesta...');
+  const params = { action: 'sendOffer', id: _modalData.id, pass: _adminPass, monto, tiempo, razon };
   if (_qrB64) { params.qrB64 = _qrB64; params.qrMime = _qrMime; }
   showLoad('Enviando propuesta...');
   try {
@@ -1384,7 +1355,7 @@ async function adminConfirmPay() {
   if (!confirm('¿Confirmar el pago y notificar al cliente que su proyecto inicia?')) return;
   showLoad('Confirmando pago...');
   try {
-    const res = await callAPI({ action: 'confirmPay', id: _modalData.id, pass: _adminPass, siteUrl: _siteUrl });
+    const res = await callAPI({ action: 'confirmPay', id: _modalData.id, pass: _adminPass });
     hideLoad();
     if (res.success) {
       toast('✅ Pago confirmado. Cliente notificado.', 'success');
@@ -1399,7 +1370,7 @@ async function adminSetStatus(estado) {
   if (!confirm('¿Cambiar estado a "' + estado + '"?')) return;
   showLoad('Actualizando...');
   try {
-    const res = await callAPI({ action: 'setStatus', id: _modalData.id, pass: _adminPass, estado, siteUrl: _siteUrl });
+    const res = await callAPI({ action: 'setStatus', id: _modalData.id, pass: _adminPass, estado });
     hideLoad();
     if (res.success) {
       toast('Estado actualizado', 'success');
