@@ -1220,7 +1220,7 @@ function renderAdminTable(data) {
 }
 
 function openModal(id) {
-  const d = _allData.find(r => r.id === id);
+  const d = _allData.find(r => String(r.id) === String(id));
   if (!d) return;
   _modalData = d;
 
